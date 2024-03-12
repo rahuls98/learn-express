@@ -5,6 +5,9 @@ const app = express();
 var cors = require("cors");
 const port = 8000;
 
+const readUsers = require("./readUsers");
+const writeUsers = require("./writeUsers");
+
 let users;
 fs.readFile(
     path.resolve(__dirname, "../data/users.json"),
@@ -27,42 +30,12 @@ const addMsgToRequest = function (req, res, next) {
 };
 
 app.use(cors({ origin: "http://localhost:3000" }));
-app.use("/read/usernames", addMsgToRequest);
-app.use("/read/username/:name", addMsgToRequest);
 
-app.get("/read/usernames", (req, res) => {
-    let usernames = req.users.map(function (user) {
-        return { id: user.id, username: user.username };
-    });
-    res.send(usernames);
-});
-
-app.get("/read/username/:name", (req, res) => {
-    let name = req.params.name;
-    let usernames = req.users.map(function (user) {
-        return { id: user.id, username: user.username, email: user.email };
-    });
-    let filterResult = usernames.filter((user) => user["username"] == name);
-    res.send(filterResult);
-});
-
+app.use(addMsgToRequest);
+app.use("/read", readUsers);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/write/adduser", addMsgToRequest);
-
-app.post("/write/adduser", (req, res) => {
-    let newuser = req.body;
-    req.users.push(newuser);
-    fs.writeFile(
-        path.resolve(__dirname, "../data/users.json"),
-        JSON.stringify(req.users),
-        (err) => {
-            if (err) console.log("Failed to write");
-            else console.log("User Saved");
-        }
-    );
-    res.send("done");
-});
+app.use("/write", writeUsers);
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
